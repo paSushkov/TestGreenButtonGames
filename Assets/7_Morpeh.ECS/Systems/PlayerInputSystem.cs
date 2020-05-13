@@ -76,21 +76,28 @@ public sealed class PlayerInputSystem : UpdateSystem
             if (unit._PhotonView.IsMine && unit.Timer.Ready)
             {
                 GameObject newBullet = PhotonNetwork.Instantiate("Bullet", unit._Transofrm.position + unit._Transofrm.up * 0.33f, unit._Transofrm.rotation);
+                var compProvider = newBullet.GetComponent<BulletComponentProvider>();
+                ref var bulletComp = ref compProvider.GetData();
                 
+                bulletComp.Speed = MasterManager.GameSettings.BulletSpeed;
+                bulletComp.Damage = MasterManager.GameSettings.BulletDamage;
+
                 foreach (var PlayerEnt in players)
                 {
                     ref var player = ref PlayerEnt.GetComponent<PlayerComponent>();
                     if (player.Player == unit._PhotonView.Owner)
                     {
-                        var compProvider = newBullet.GetComponent<BulletComponentProvider>();
-                        ref var bulletComp = ref compProvider.GetData();
                         bulletComp.OriginOwner = unit._PhotonView.Owner;
                         bulletComp.Team = player.Team;
-                        bulletComp.Damage = MasterManager.GameSettings.BulletDamage;
                     }
                 }
-                newBullet.GetPhotonView().TransferOwnership(PhotonNetwork.MasterClient);
-                
+                // If client is not master client, we need to sync data with master (who handles collisions)
+                if (!PhotonNetwork.IsMasterClient)
+                {
+                    PhotonManager.Instance.PhotonView.RPC("SetBulletParameters", RpcTarget.MasterClient, newBullet.GetPhotonView().ViewID, bulletComp.OriginOwner, bulletComp.Team, bulletComp.Damage, bulletComp.Speed);
+                    newBullet.GetPhotonView().TransferOwnership(PhotonNetwork.MasterClient);
+                }
+
                 unit.Timer.Ready = false;
             }
         }

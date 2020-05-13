@@ -28,7 +28,7 @@ public sealed class HealthSystem : UpdateSystem
                     {
                         PhotonNetwork.Destroy(healthComp.Transform.gameObject);
                     }
-                    else if (PhotonNetwork.IsMasterClient)
+                    else if (PhotonNetwork.IsMasterClient && healthComp.Owner == null)
                     {
                         PhotonManager.Instance.PhotonView.RPC("LocalDestroy", RpcTarget.All, healthComp.Transform.gameObject.GetPhotonView().ViewID);
                     }

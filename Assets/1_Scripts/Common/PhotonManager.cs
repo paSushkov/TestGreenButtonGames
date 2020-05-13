@@ -5,6 +5,7 @@ using Photon.Realtime;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 public class PhotonManager : MonoBehaviourPunCallbacks
@@ -88,8 +89,22 @@ public class PhotonManager : MonoBehaviourPunCallbacks
     [PunRPC]
     private void LocalDestroy(int viewId)
     {
-        GameObject.Destroy(PhotonView.Find(viewId).gameObject);
-    }    
+        if (PhotonView.Find(viewId).gameObject != null)
+        {
+            GameObject.Destroy(PhotonView.Find(viewId).gameObject);
+        }
+    }
+    [PunRPC]
+    private void SetBulletParameters(int viewId, Player OriginOwner, Team Team, int Damage, float Speed)
+    {
+        BulletComponentProvider provider = PhotonView.Find(viewId).gameObject.GetComponent<BulletComponentProvider>();
+        ref var bulletComp = ref provider.GetData();
+        bulletComp.Damage = Damage;
+        bulletComp.Speed = Speed;
+        bulletComp.OriginOwner = OriginOwner;
+        bulletComp.Team = Team;
+    }
+
     [PunRPC]
     private void SetActive(int viewId, bool active)
     {
